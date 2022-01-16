@@ -1,48 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:meals/models/meal.dart';
-import 'package:meals/screens/category_meals_screen.dart';
-import 'package:meals/screens/meal_detail_screen.dart';
+import 'package:meals/providers/language_provider.dart';
+import 'package:provider/provider.dart';
 
 class MealItem extends StatelessWidget {
   final String id;
-  final String title;
   final String imageUrl;
   final int duration;
   final Complexity complexity;
   final Affordability affordability;
 
 
-  const MealItem({this.id,
-    this.title,
-    this.imageUrl,
-    this.duration,
-    this.complexity,
-    this.affordability,
+  const MealItem({
+    required this.id,
+    required this.imageUrl,
+    required this.duration,
+    required this.complexity,
+    required this.affordability,
+    Key? key
     }
-      );
+      ) : super(key: key);
 
-  String get complexityText{
-    switch(complexity){
-      case Complexity.simple: return 'Simple';break;
-      case Complexity.challenging: return 'Challenging';break;
-      case Complexity.hard: return 'Hard';break;
-      default: return 'Unknown';break;
 
-    }
-  }
-  String get affordabilityText{
-    switch(affordability){
-      case Affordability.affordable: return 'Affordable';break;
-      case Affordability.pricey: return 'Pricey';break;
-      case Affordability.luxurious: return 'Luxurious';break;
-      default: return 'Unknown';break;
 
-    }
-  }
   void selectMeal(BuildContext ctx) {
     Navigator.pushNamed(
       ctx,
-      MealDetailScreen.routeName,
+      'MealDetailScreen',
       arguments: id,
     ).then((mealId) { //removeItem(mealId);
     });
@@ -50,6 +34,8 @@ class MealItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lan = Provider.of<LanguageProvider>(context, listen: true);
+
     return InkWell(
       onTap: ()=>selectMeal(context),
       borderRadius: BorderRadius.circular(15),
@@ -59,55 +45,70 @@ class MealItem extends StatelessWidget {
         ),
         elevation: 4,
         margin: const EdgeInsets.all(10),
-        child: Column(
-          children: [
-            Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                  ),
-                  child: Image.network(imageUrl,height: 200,width: double.infinity,fit: BoxFit.cover,),
-                ),
-                Container(
-                  width: 220,
-                  padding: const EdgeInsets.all(8),
-                  //margin: const EdgeInsets.only(bottom: 20),
-                  color: Colors.black54,
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontSize: 24,color: Colors.white),
-                    softWrap: true,
-                    overflow: TextOverflow.fade,
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Stack(
+                alignment: Alignment.bottomRight,
                 children: [
-                  buildRow(Icons.schedule,"$duration min"),
-                  buildRow(Icons.work,complexityText),
-                  buildRow(Icons.attach_money,affordabilityText),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                    ),
+                    child: Hero(
+                        tag: id,
+                        child: InteractiveViewer(
+                            child: FadeInImage(
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 235,
+                                placeholder: const AssetImage('assets/images/a2.png'),
+                                image: NetworkImage(imageUrl,)))),
+                  ),
+                  Container(
+                    width: 220,
+                    padding: const EdgeInsets.all(8),
+                    //margin: const EdgeInsets.only(bottom: 20),
+                    color: Colors.black54,
+                    child: Text(
+                      lan.getTexts('meal-$id').toString(),
+                      style: const TextStyle(fontSize: 24,color: Colors.white),
+                      softWrap: true,
+                      overflow: TextOverflow.fade,
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    buildRow(
+                        Icons.schedule,
+                       duration <= 10
+                           ?duration.toString()+ lan.getTexts('min2').toString()
+                           :duration.toString()+ lan.getTexts('min').toString(),
+                        context),
+                    buildRow(Icons.work,lan.getTexts(complexity.toString()) , context),
+                    buildRow(Icons.attach_money,lan.getTexts(affordability.toString()), context),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Row buildRow(IconData icon, String text) {
+  Row buildRow(IconData icon, dynamic text, BuildContext context) {
     return Row(
                   children: [
-                    Icon(icon),
-                    const SizedBox(width: 5,),
-                    Text(text),
+                    Icon(icon,color: Theme.of(context).iconTheme.color,),
+                    const SizedBox(width: 6,),
+                    Text(text.toString()),
                   ],
                 );
   }

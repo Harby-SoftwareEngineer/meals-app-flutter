@@ -1,55 +1,61 @@
-
 import 'package:flutter/material.dart';
-import 'package:meals/dummy_data.dart';
-import 'package:meals/models/meal.dart';
-import 'package:meals/widgets/meal_item.dart';
+import 'package:meals/providers/language_provider.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/meal_provider.dart';
+import '../models/meal.dart';
+import '../widgets/meal_item.dart';
 
 class CategoryMealsScreen extends StatefulWidget {
   static const  routeName = 'displayedMealsScreen';
-  final List<Meal> availableMeals;
-  const CategoryMealsScreen(this.availableMeals,{Key key}) : super(key: key);
+  const CategoryMealsScreen({Key? key}) : super(key: key);
 
   @override
   _CategoryMealsScreenState createState() => _CategoryMealsScreenState();
 }
 
 class _CategoryMealsScreenState extends State<CategoryMealsScreen> {
-  String categoryTitle;
-  List<Meal> displayedMeals;
+  String categoryId = '';
+  List<Meal> displayedMeals = <Meal>[];
 
-  void _removeMeal(String mealId){
-    setState(() {
-      displayedMeals.removeWhere((meal) => meal.id == mealId);
-    });
-  }
   @override
   void didChangeDependencies() {
-    super.didChangeDependencies();
-    final routeArg = ModalRoute.of(context).settings.arguments as Map<String, String>;
-    final categoryId = routeArg['id'];
-    categoryTitle = routeArg['title'];
-    displayedMeals =widget.availableMeals.where((meal) {
+    final List<Meal> availableMeals = Provider.of<MealProvider>(context, listen: true).availableMeals;
+    final routeArg = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+     categoryId = routeArg['id']!;
+    displayedMeals = availableMeals.where((meal) {
       return meal.categories.contains(categoryId);
     }).toList();
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
+    final lan = Provider.of<LanguageProvider>(context, listen: true);
+    bool isLandScape = MediaQuery.of(context).orientation == Orientation.landscape;
+    double dw = MediaQuery.of(context).size.width;
+    return Directionality(
+      textDirection: lan.isEn ? TextDirection.ltr : TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(title: Text(lan.getTexts('cat-$categoryId').toString()),),
+        body: GridView.builder(
+          itemCount: displayedMeals.length,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: dw <=400 ? 400 : 500,
+            childAspectRatio: isLandScape? dw/(dw*0.8) : dw/(dw*0.75),
+            crossAxisSpacing: 0.0,
+            mainAxisSpacing: 0.0,
 
+          ),
+          itemBuilder: (context, index)=>
+          MealItem(
+            id:displayedMeals[index].id,
+            imageUrl: displayedMeals[index].imageUrl,
+            duration: displayedMeals[index].duration,
+            complexity: displayedMeals[index].complexity,
+            affordability: displayedMeals[index].affordability,
 
-    return Scaffold(
-      appBar: AppBar(title: Text(categoryTitle),),
-      body: ListView.builder(
-        itemCount: displayedMeals.length,
-        itemBuilder: (context, index)=>
-        MealItem(
-          id:displayedMeals[index].id,
-          title:displayedMeals[index].title,
-          imageUrl: displayedMeals[index].imageUrl,
-          duration: displayedMeals[index].duration,
-          complexity: displayedMeals[index].complexity,
-          affordability: displayedMeals[index].affordability,
-
+          ),
         ),
       ),
     );

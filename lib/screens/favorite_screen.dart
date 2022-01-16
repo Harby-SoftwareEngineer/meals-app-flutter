@@ -1,27 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:meals/widgets/meal_item.dart';
+import 'package:meals/providers/language_provider.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/meal_provider.dart';
+import '../widgets/meal_item.dart';
 import '../models/meal.dart';
 
 class FavoriteScreen extends StatelessWidget {
-  final List<Meal> favoriteMeals;
-  const FavoriteScreen(this.favoriteMeals,{Key key}) : super(key: key);
+
+  const FavoriteScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-
+    bool isLandScape = MediaQuery.of(context).orientation == Orientation.landscape;
+    double dw = MediaQuery.of(context).size.width;
+    final lan = Provider.of<LanguageProvider>(context, listen: true);
+    final List<Meal> favoriteMeals = Provider.of<MealProvider>(context, listen: true).favoriteMeals;
     if(favoriteMeals.isEmpty){
-      return Container(
-        color: Colors.white,
-        child: const Text("You have no favorites yet - start adding some!"),
-      );
+      return  Center(child: Text(lan.getTexts('favorites_text').toString()));
     }
     else{
-      return ListView.builder(
+      return GridView.builder(
         itemCount: favoriteMeals.length,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: dw <=400 ? 400 : 500,
+          childAspectRatio: isLandScape? dw/(dw*0.8) : dw/(dw*0.75),
+          crossAxisSpacing: 0.0,
+          mainAxisSpacing: 0.0,
+        ),
         itemBuilder: (context, index)=>
             MealItem(
               id:favoriteMeals[index].id,
-              title:favoriteMeals[index].title,
               imageUrl: favoriteMeals[index].imageUrl,
               duration: favoriteMeals[index].duration,
               complexity: favoriteMeals[index].complexity,
